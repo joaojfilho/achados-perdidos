@@ -1,24 +1,23 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const bodyParser = require('body-parser');
-const cors = require('cors');
+// Adicione no início do arquivo:
+require('dotenv').config();
+import express from 'express';
+import { connect, model } from 'mongoose';
+import { json } from 'body-parser';
+import cors from 'cors';
 
 const app = express();
 
 // Middleware
-app.use(bodyParser.json());
+app.use(json());
 app.use(cors());
 
-// Conexão com MongoDB
-mongoose.connect('mongodb+srv://achados-perdidos:teste@achados-perdidos.pato6az.mongodb.net/?retryWrites=true&w=majority&appName=achados-perdidos', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => console.log('Conectado ao MongoDB'))
-.catch(err => console.error('Erro ao conectar ao MongoDB:', err));
+// Modifique a conexão do MongoDB:
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/achados-perdidos')
+  .then(() => console.log('Conectado ao MongoDB'))
+  .catch(err => console.error('Erro ao conectar ao MongoDB:', err));
 
 // Modelo do Item
-const Item = mongoose.model('Item', {
+const Item = model('Item', {
   tipo: String, // 'achado' ou 'perdido'
   titulo: String,
   descricao: String,
@@ -59,6 +58,14 @@ app.patch('/api/itens/:id', async (req, res) => {
   } catch (err) {
     res.status(400).send(err);
   }
+});
+
+// Adicione no final (antes do app.listen):
+const path = require('path');
+app.use(express.static(path.join(__dirname, '../frontend/build')));
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
 });
 
 // Iniciar servidor

@@ -10,7 +10,7 @@ app.use(bodyParser.json());
 app.use(cors());
 
 // Conexão com MongoDB
-mongoose.connect('mongodb://localhost:27017/achados-perdidos', {
+mongoose.connect('mongodb+srv://achados-perdidos:teste@achados-perdidos.pato6az.mongodb.net/?retryWrites=true&w=majority&appName=achados-perdidos', {
   useNewUrlParser: true,
   useUnifiedTopology: true
 })

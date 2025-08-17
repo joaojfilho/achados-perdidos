@@ -1,35 +1,52 @@
-// Adicione no início do arquivo:
-require('dotenv').config();
 import express from 'express';
-import { connect, model } from 'mongoose';
-import { json } from 'body-parser';
+import mongoose from 'mongoose';
 import cors from 'cors';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
+
+// Configuração do __dirname em ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config();
 
 const app = express();
 
 // Middleware
-app.use(json());
+app.use(express.json());
 app.use(cors());
 
-// Modifique a conexão do MongoDB:
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/achados-perdidos')
-  .then(() => console.log('Conectado ao MongoDB'))
-  .catch(err => console.error('Erro ao conectar ao MongoDB:', err));
+// Conexão com MongoDB
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/achados-perdidos', {
+      serverSelectionTimeoutMS: 5000
+    });
+    console.log('Conectado ao MongoDB');
+  } catch (err) {
+    console.error('Erro ao conectar ao MongoDB:', err);
+    process.exit(1);
+  }
+};
+connectDB();
 
 // Modelo do Item
-const Item = model('Item', {
-  tipo: String, // 'achado' ou 'perdido'
+const itemSchema = new mongoose.Schema({
+  tipo: String,
   titulo: String,
   descricao: String,
   local: String,
   data: Date,
   contato: String,
   imagem: String,
-  status: { type: String, default: 'pendente' } // 'pendente', 'resolvido'
+  status: { type: String, default: 'pendente' }
 });
 
-// Rotas
-// Criar item
+const Item = mongoose.model('Item', itemSchema);
+
+// Rotas API
 app.post('/api/itens', async (req, res) => {
   try {
     const item = new Item(req.body);
@@ -40,7 +57,6 @@ app.post('/api/itens', async (req, res) => {
   }
 });
 
-// Listar todos os itens
 app.get('/api/itens', async (req, res) => {
   try {
     const itens = await Item.find().sort({ data: -1 });
@@ -50,23 +66,26 @@ app.get('/api/itens', async (req, res) => {
   }
 });
 
-// Atualizar status do item
 app.patch('/api/itens/:id', async (req, res) => {
   try {
-    const item = await Item.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const item = await Item.findByIdAndUpdate(req.params.id, req.body, { 
+      new: true,
+      runValidators: true
+    });
     res.send(item);
   } catch (err) {
     res.status(400).send(err);
   }
 });
 
-// Adicione no final (antes do app.listen):
-const path = require('path');
-app.use(express.static(path.join(__dirname, '../frontend/build')));
-
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
-});
+// Servir frontend (apenas se o build existir)
+const frontendBuildPath = path.join(__dirname, '../frontend/build');
+if (fs.existsSync(frontendBuildPath)) {
+  app.use(express.static(frontendBuildPath));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(frontendBuildPath, 'index.html'));
+  });
+}
 
 // Iniciar servidor
 const PORT = process.env.PORT || 5000;

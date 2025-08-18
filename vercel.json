@@ -5,8 +5,7 @@
       "src": "backend/server.js",
       "use": "@vercel/node",
       "config": { 
-        "nodeVersion": "22.x",
-        "includeFiles": ["frontend/build/**"]
+        "nodeVersion": "18.x"
       }
     }
   ],
@@ -14,10 +13,6 @@
     {
       "src": "/api/(.*)",
       "dest": "backend/server.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "frontend/build/index.html"
     }
   ]
 }

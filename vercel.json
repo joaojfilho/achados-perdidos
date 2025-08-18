@@ -5,22 +5,30 @@
       "src": "backend/server.js",
       "use": "@vercel/node",
       "config": {
-        "nodeVersion": "22.x"
+        "nodeVersion": "22.x",
+        "includeFiles": ["frontend/build/**"],
+        "suppressResponseHeaders": true
       }
     },
     {
-      "src": "frontend/build/**/*",
+      "src": "frontend/build/**",
       "use": "@vercel/static"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/backend/server.js"
+      "dest": "backend/server.js",
+      "headers": {
+        "Content-Type": "application/json"
+      }
     },
     {
       "src": "/(.*)",
-      "dest": "/frontend/build/index.html"
+      "dest": "frontend/build/index.html",
+      "headers": {
+        "Cache-Control": "public, max-age=0, must-revalidate"
+      }
     }
   ]
 }
